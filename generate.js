@@ -3,6 +3,44 @@ const path = require('path');
 
 const BASE = __dirname;
 
+// Actualités de l'accueil : lues depuis data/news.json (généré par fetch-news.js).
+// Repli sur des actus statiques si le fichier est absent ou vide.
+function escHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+let newsItems = [];
+try {
+    const loaded = require('./data/news.json');
+    if (Array.isArray(loaded)) newsItems = loaded.filter(n => n && n.title && n.url && n.image);
+} catch (e) { /* repli statique ci-dessous */ }
+if (newsItems.length === 0) {
+    newsItems = [
+        { title: 'Menu du restaurant scolaire', date: '7 Sept 2026', desc: 'Menu du 7 au 13 septembre 2026', url: 'restauration.html', image: 'images/news-menu.webp' },
+        { title: 'Tarification Restauration', date: '5 Sept 2026', desc: 'Inscrivez-vous sur le site de la Région pour déterminer votre tarif', url: 'restauration.html', image: 'images/news-tarification.webp' },
+        { title: 'Concours Kangourou des Mathématiques', date: '22 Juin 2026', desc: 'Des élèves récompensés au concours Kangourou des Mathématiques', url: 'agenda.html', image: 'images/news-kangourou.webp' }
+    ];
+}
+
+const newsCards = newsItems.slice(0, 3).map(n => {
+    const ext = /^https?:\/\//i.test(n.url) ? ' target="_blank" rel="noopener"' : '';
+    return `
+                <article class="news-card">
+                    <div class="news-image" style="background-image: url('${n.image}')">
+                        ${n.date ? `<span class="news-date">${escHtml(n.date)}</span>` : ''}
+                    </div>
+                    <div class="news-body">
+                        <h3>${escHtml(n.title)}</h3>
+                        ${n.desc ? `<p>${escHtml(n.desc)}</p>` : ''}
+                        <a href="${n.url}" class="news-link"${ext}>Lire la suite <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </article>`;
+}).join('\n');
+
 function head(title) {
 return `<!DOCTYPE html>
 <html lang="fr">
@@ -488,36 +526,7 @@ writePage('index.html', head('Accueil') + topBar() + header() + mobileNav() + `
         <div class="container">
             <h2 class="section-title">Nos dernières <span>actualités</span></h2>
             <div class="news-grid">
-                <article class="news-card">
-                    <div class="news-image" style="background-image: url('images/news-menu.webp')">
-                        <span class="news-date">7 Sept 2026</span>
-                    </div>
-                    <div class="news-body">
-                        <h3>Menu du restaurant scolaire</h3>
-                        <p>Menu du 7 au 13 septembre 2026</p>
-                        <a href="#" class="news-link">Lire la suite <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </article>
-                <article class="news-card">
-                    <div class="news-image" style="background-image: url('images/news-tarification.webp')">
-                        <span class="news-date">5 Sept 2026</span>
-                    </div>
-                    <div class="news-body">
-                        <h3>Tarification Restauration</h3>
-                        <p>Inscrivez-vous sur le site de la Région pour déterminer votre tarif</p>
-                        <a href="restauration.html" class="news-link">Lire la suite <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </article>
-                <article class="news-card">
-                    <div class="news-image" style="background-image: url('images/news-kangourou.webp')">
-                        <span class="news-date">22 Juin 2026</span>
-                    </div>
-                    <div class="news-body">
-                        <h3>Concours Kangourou des Mathématiques</h3>
-                        <p>Des élèves récompensés au concours Kangourou des Mathématiques</p>
-                        <a href="#" class="news-link">Lire la suite <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </article>
+${newsCards}
             </div>
             <div class="news-cta">
                 <a href="agenda.html" class="btn btn-outline">Toute notre actualité <i class="fas fa-arrow-right"></i></a>
